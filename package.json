@@ -28,9 +28,9 @@
     "url": "https://github.com/juice-shop/juice-shop.git"
   },
   "license": "MIT",
-  "author": "Björn Kimminich <bjoern.kimminich@owasp.org> (https://kimminich.de)",
+  "author": "Bj\u00f6rn Kimminich <bjoern.kimminich@owasp.org> (https://kimminich.de)",
   "contributors": [
-    "Björn Kimminich",
+    "Bj\u00f6rn Kimminich",
     "Jannik Hollenbach",
     "Aashish683",
     "greenkeeper[bot]",
@@ -172,7 +172,7 @@
     "pug": "^3.0.3",
     "replace": "^1.2.2",
     "sanitize-filename": "^1.6.3",
-    "sanitize-html": "1.4.2",
+    "sanitize-html": "2.17.2",
     "semver": "^7.6.3",
     "sequelize": "^6.37.3",
     "serve-index": "^1.9.1",
