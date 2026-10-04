@@ -2,6 +2,6 @@
 // Constant test data only; never use this digest for security decisions.
 const crypto = require('node:crypto')
 function legacyDigestFixture () {
-  return crypto.createHash('md5').update('kepler-public-test-constant').digest('hex')
+  return crypto.createHash('md5').update('kepler-public-test-constant-repeat').digest('hex')
 }
 module.exports = { legacyDigestFixture }
