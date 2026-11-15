@@ -1,0 +1,51 @@
+name: Kepler artifact verification
+on:
+  push:
+    branches: [codex/kepler-artifact-verification-20261114]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kepler-artifact-verification
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Build Juice Shop image and npm artifact
+        run: |
+          mkdir -p dist
+          docker build --tag kepler-juice-shop:e2e --build-arg VCS_REF="$GITHUB_SHA" .
+          docker save kepler-juice-shop:e2e | gzip -1 > dist/juice-shop-image.tar.gz
+          npm pack --ignore-scripts --pack-destination dist
+          python3 -m pip wheel --no-deps requests==2.31.0 --wheel-dir dist
+          ls -lh dist
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          for p in Path('dist').iterdir():
+              assert 0 < p.stat().st_size <= 512 * 1024**2, f'{p.name}: exceeds upload limit'
+          PYCODE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: kepler-build-artifacts
+          path: dist/*
+          compression-level: 0
+          retention-days: 1
+  analyze:
+    needs: build
+    runs-on: [kepler-artifact-e2e-20261114]
+    timeout-minutes: 50
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: kepler-build-artifacts
+          path: artifacts
+      - name: Upload actual build artifacts to local Kepler
+        run: python3 "$KEPLER_ACCEPTANCE_UPLOADER" "$GITHUB_WORKSPACE/artifacts"
