@@ -1,5 +1,9 @@
 name: Kepler mobile artifact verification
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/kepler-artifact-verification-20261114]
+    paths: [.github/workflows/kepler-mobile-verification.yml]
 permissions:
   contents: read
 jobs:

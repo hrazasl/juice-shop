@@ -1,7 +1,5 @@
 name: Kepler artifact verification
 on:
-  push:
-    branches: [codex/kepler-artifact-verification-20261114]
   workflow_dispatch:
 permissions:
   contents: read
