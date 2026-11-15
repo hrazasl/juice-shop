@@ -13,7 +13,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532
         with:
           cosign-release: v3.0.2
       - name: Build and sign isolated acceptance image
@@ -28,6 +28,8 @@ jobs:
           docker push "$IMAGE"
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
           cosign sign --yes "$DIGEST"
+          printf '%s' '{"buildDefinition":{"buildType":"https://kepler.dev/acceptance/v1","resolvedDependencies":[{"uri":"git+https://github.com/hrazasl/juice-shop"}]},"runDetails":{"builder":{"id":"https://github.com/hrazasl/juice-shop/.github/workflows/ci.yml"}}}' > /tmp/kepler-acceptance/provenance.json
+          cosign attest --yes --type=https://slsa.dev/provenance/v1 --predicate=/tmp/kepler-acceptance/provenance.json "$DIGEST"
           printf '%s\n' "$DIGEST" > /tmp/kepler-acceptance/image-ref.txt
           docker save "$IMAGE" | gzip > /tmp/kepler-acceptance/image.tar.gz
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
