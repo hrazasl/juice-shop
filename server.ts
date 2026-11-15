@@ -126,6 +126,10 @@ import { continueCode, continueCodeFindIt, continueCodeFixIt } from './routes/co
 import { ensureFileIsPassed, handleZipFileUpload, checkUploadSize, checkFileType, handleXmlUpload, handleYamlUpload } from './routes/fileUpload'
 
 const app = express()
+// Read-only endpoint for Kepler API-discovery acceptance.
+app.get('/rest/kepler-phase1-acceptance', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', source: 'kepler-api-discovery-acceptance' })
+})
 const server = new http.Server(app)
 
 // errorhandler requires us from overwriting a string property on it's module which is a big no-no with esmodules :/
