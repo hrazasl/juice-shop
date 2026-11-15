@@ -13,7 +13,7 @@ jobs:
       - name: Package real published dependency
         run: |
           mkdir dist
-          npm pack lodash@4.17.20 --ignore-scripts --pack-destination dist
+          npm pack axios@0.21.0 --ignore-scripts --pack-destination dist
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: npm-acceptance
