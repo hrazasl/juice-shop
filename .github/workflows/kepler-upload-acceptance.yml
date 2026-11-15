@@ -1,0 +1,33 @@
+name: Kepler upload acceptance
+on:
+  push:
+    branches: [codex/kepler-artifact-verification-20261114]
+    paths: [.github/workflows/kepler-upload-acceptance.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  verify:
+    runs-on: [kepler-artifact-e2e-20261114]
+    timeout-minutes: 50
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: kepler-build-artifacts
+          path: artifacts/build
+          run-id: '43659717188'
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: npm-acceptance
+          path: artifacts/npm
+          run-id: '43661255777'
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: artifacts/mobile
+          run-id: '43659974332'
+          github-token: ${{ github.token }}
+      - name: Verify uploads, findings, policy verdicts and size rejection
+        run: python3 "$KEPLER_ACCEPTANCE_UPLOADER" "$GITHUB_WORKSPACE/artifacts"
