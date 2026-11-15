@@ -1,0 +1,21 @@
+name: Kepler package artifact verification
+on:
+  push:
+    branches: [codex/kepler-artifact-verification-20261114]
+    paths: [.github/workflows/kepler-package-verification.yml]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Package real published dependency
+        run: |
+          mkdir dist
+          npm pack lodash@4.17.20 --ignore-scripts --pack-destination dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: npm-acceptance
+          path: dist/*.tgz
+          retention-days: 1
