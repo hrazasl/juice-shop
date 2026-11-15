@@ -22,7 +22,7 @@ jobs:
       - name: Build Juice Shop image and npm artifact
         run: |
           mkdir -p dist
-          docker build --tag kepler-juice-shop:e2e --build-arg VCS_REF="$GITHUB_SHA" .
+          docker build --tag kepler-juice-shop:e2e --build-arg VCS_REF="$GITHUB_SHA" --build-arg CYCLONEDX_NPM_VERSION=2.1.0 .
           docker save kepler-juice-shop:e2e | gzip -1 > dist/juice-shop-image.tar.gz
           npm pack --ignore-scripts --pack-destination dist
           python3 -m pip wheel --no-deps requests==2.31.0 --wheel-dir dist
