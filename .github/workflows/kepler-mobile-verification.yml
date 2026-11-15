@@ -1,0 +1,85 @@
+name: Kepler mobile artifact verification
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Compile Android acceptance application
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="$ANDROID_HOME"
+          TOOLS=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          API=$(find "$SDK/platforms" -name android.jar | sort -V | tail -1)
+          mkdir -p src/com/kepler/ciacceptance classes dex dist
+          cat > src/com/kepler/ciacceptance/MainActivity.java <<'JAVA'
+          package com.kepler.ciacceptance;
+          public class MainActivity extends android.app.Activity {
+            public void onCreate(android.os.Bundle state) {
+              super.onCreate(state);
+              android.widget.TextView v = new android.widget.TextView(this);
+              v.setText("Kepler CI artifact acceptance"); setContentView(v);
+            }
+          }
+          JAVA
+          cat > AndroidManifest.xml <<'XML'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.kepler.ciacceptance" android:versionCode="1" android:versionName="1.0">
+            <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="28"/>
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:label="Kepler CI acceptance" android:debuggable="true" android:allowBackup="true" android:usesCleartextTraffic="true">
+              <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+            </application>
+          </manifest>
+          XML
+          javac -source 8 -target 8 -bootclasspath "$API" -d classes src/com/kepler/ciacceptance/MainActivity.java
+          "$TOOLS/d8" --min-api 23 --lib "$API" --output dex classes/com/kepler/ciacceptance/MainActivity.class
+          "$TOOLS/aapt2" link -I "$API" --manifest AndroidManifest.xml -o acceptance-unsigned.apk
+          (cd dex && zip -q ../acceptance-unsigned.apk classes.dex)
+          "$TOOLS/zipalign" -p 4 acceptance-unsigned.apk dist/acceptance.apk
+          keytool -genkeypair -keystore acceptance.jks -storepass android -keypass android -alias acceptance -keyalg RSA -validity 2 -dname 'CN=Kepler CI Acceptance' -noprompt
+          "$TOOLS/apksigner" sign --ks acceptance.jks --ks-pass pass:android dist/acceptance.apk
+          "$TOOLS/apksigner" verify dist/acceptance.apk
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-acceptance
+          path: dist/acceptance.apk
+          retention-days: 1
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Compile iOS acceptance application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Payload/Acceptance.app dist
+          cat > main.m <<'OBJC'
+          #import <UIKit/UIKit.h>
+          @interface AppDelegate : UIResponder <UIApplicationDelegate>
+          @property(strong,nonatomic) UIWindow *window;
+          @end
+          @implementation AppDelegate
+          -(BOOL)application:(UIApplication *)app didFinishLaunchingWithOptions:(NSDictionary *)options {
+            self.window=[[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+            self.window.rootViewController=[UIViewController new];
+            [self.window makeKeyAndVisible]; return YES;
+          }
+          @end
+          int main(int argc,char **argv){ @autoreleasepool { return UIApplicationMain(argc,argv,nil,@"AppDelegate"); } }
+          OBJC
+          xcrun --sdk iphoneos clang -arch arm64 -miphoneos-version-min=15.0 -fobjc-arc -framework UIKit -framework Foundation main.m -o Payload/Acceptance.app/Acceptance
+          cat > Payload/Acceptance.app/Info.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict>
+          <key>CFBundleIdentifier</key><string>com.kepler.ciacceptance.ios</string><key>CFBundleName</key><string>Kepler CI acceptance</string><key>CFBundleExecutable</key><string>Acceptance</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleVersion</key><string>1</string><key>CFBundleShortVersionString</key><string>1.0</string><key>MinimumOSVersion</key><string>15.0</string><key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoads</key><true/></dict>
+          </dict></plist>
+          PLIST
+          codesign --force --sign - Payload/Acceptance.app
+          zip -qr dist/acceptance.ipa Payload
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ios-acceptance
+          path: dist/acceptance.ipa
+          retention-days: 1
