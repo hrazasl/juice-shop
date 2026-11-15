@@ -126,7 +126,7 @@ import { continueCode, continueCodeFindIt, continueCodeFixIt } from './routes/co
 import { ensureFileIsPassed, handleZipFileUpload, checkUploadSize, checkFileType, handleXmlUpload, handleYamlUpload } from './routes/fileUpload'
 
 const app = express()
-// Read-only endpoint for Kepler API-discovery acceptance with retained route evidence.
+// Read-only endpoint for Kepler API-discovery acceptance with bounded PR context.
 app.get('/rest/kepler-phase1-acceptance', (_req: Request, res: Response) => {
   res.json({ status: 'ok', source: 'kepler-api-discovery-acceptance' })
 })
